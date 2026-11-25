@@ -1,6 +1,6 @@
 # Network-Connected IoT Device Simulator
 
-A **software-only IoT project** demonstrating sensor-data publishing over MQTT, reconnect handling, and persistent offline buffering. It runs on a laptop and does not require an ESP32, Arduino, or physical sensor.
+A **software-only IoT project** demonstrating sensor-data publishing over MQTT, automatic reconnection configuration, and persistent offline data buffering. It runs on a laptop and does not require an ESP32, Arduino, or physical sensor.
 
 ## 1. Requirements
 
@@ -11,9 +11,9 @@ A **software-only IoT project** demonstrating sensor-data publishing over MQTT, 
 
 ## 2. Setup on Windows
 
-Open Command Prompt in this project folder and run:
+Open Command Prompt in the project folder and run these commands one at a time:
 
-```bash
+```cmd
 py -m venv .venv
 .venv\Scripts\activate
 py -m pip install -r requirements.txt
@@ -21,50 +21,54 @@ py -m pip install -r requirements.txt
 
 If `py` is not recognised, install Python from https://www.python.org/downloads/ and select **Add Python to PATH** during installation. Then reopen Command Prompt.
 
-## 3. Run the project
+## 3. Run the Project
 
-Run a normal session:
+To run a normal session:
 
-```bash
+```cmd
 py device.py --count 20 --interval 2
 ```
 
-Run the offline-buffer demonstration:
+To run the offline-buffer demonstration:
 
-```bash
+```cmd
 py device.py --offline-demo --offline-seconds 12 --count 20 --interval 2
 ```
 
-During the first 12 seconds, the simulator deliberately pauses publishing while continuing to generate and save readings to `offline_queue.jsonl`. After the simulated outage, it sends the buffered readings in order when MQTT is connected.
+During the first 12 seconds, the simulator deliberately pauses publishing while continuing to generate readings and save them to `offline_queue.jsonl`.
 
-The project also configures the Paho MQTT client to retry a real broker/network disconnection with an increasing reconnect delay.
+After the simulated outage, it publishes the buffered readings in order when the MQTT connection is available.
 
-## 4. How the requirements are met
+The project also configures the Paho MQTT client with automatic reconnection and an increasing reconnect delay for actual broker or network disconnections.
+
+## 4. How the Internship Requirements Are Addressed
 
 | Internship requirement | Implementation |
 |---|---|
-| Data published over Wi-Fi or MQTT | Python Paho MQTT client publishes JSON readings to a broker over the laptop's network. |
-| Reconnect logic that works | Paho network loop and `reconnect_delay_set()` retry a dropped broker connection. Initial connection failures also use retry/backoff. |
-| Readings buffered while offline | `OfflineQueue` writes each reading to a local JSON Lines file and removes it only after a QoS 1 publish acknowledgement. |
+| Data published over Wi-Fi or MQTT | The Python Paho MQTT client publishes JSON sensor readings to a broker over the laptop's network. |
+| Reconnection logic | Paho's network loop and `reconnect_delay_set()` configure automatic reconnection attempts after connection loss. Initial connection failures also use retry logic with backoff. |
+| Offline data buffering | `OfflineQueue` stores readings in a local JSON Lines file and removes them only after a QoS 1 publish acknowledgement. |
 
-## 5. View incoming MQTT messages
+## 5. View Incoming MQTT Messages
 
-The program prints a unique topic when it starts, for example:
+When the program starts, it prints a unique MQTT topic, for example:
 
 `upstartinterns/iot-demo/abc12345/readings`
 
-You can view messages using an MQTT client such as MQTT Explorer. Connect to:
+You can view incoming messages using an MQTT client such as MQTT Explorer.
 
-- Host: `test.mosquitto.org`
-- Port: `1883`
-- Protocol: MQTT (TCP)
-- Topic: copy the exact topic printed by the program
+Use the following connection details:
+
+- **Host:** `test.mosquitto.org`
+- **Port:** `1883`
+- **Protocol:** MQTT (TCP)
+- **Topic:** Copy the exact topic printed by the program.
 
 This is a public test broker. Do not publish personal or confidential information.
 
-## 6. Evidence to capture
+## 6. Testing Evidence
 
-For the offline-buffer demo, take a screenshot of the terminal showing:
+For the offline-buffer demonstration, capture a screenshot of the terminal showing:
 
 1. `DEMO OUTAGE`
 2. `OFFLINE BUFFER: saved reading locally`
@@ -72,11 +76,13 @@ For the offline-buffer demo, take a screenshot of the terminal showing:
 4. `PUBLISHED (QoS 1)`
 5. `Finished`
 
-If possible, also capture MQTT Explorer showing messages arriving on the printed topic.
+If possible, also capture MQTT Explorer displaying messages arriving on the printed topic.
 
-**Honest testing note:** `--offline-demo` simulates a temporary publishing outage at the application layer so the buffer and replay behavior can be demonstrated without disconnecting the laptop's Wi-Fi. The Paho reconnect configuration handles actual MQTT connection drops; test a real broker/network interruption separately if you can.
+**Testing note:** The `--offline-demo` option simulates a temporary publishing outage at the application level. It demonstrates local buffering and replay without disconnecting the laptop's Wi-Fi.
 
-## 7. Project structure
+The Paho MQTT client is configured to retry actual MQTT connection drops. However, the offline demonstration alone does not prove that a real network or broker interruption was successfully recovered. A separate real-disconnection test is recommended when possible.
+
+## 7. Project Structure
 
 ```text
 network-connected-iot-simulator/
@@ -88,13 +94,13 @@ network-connected-iot-simulator/
 
 ## 8. Limitations
 
-- Sensor values are generated by software, not measured by a physical sensor.
-- The public MQTT broker is for testing and may occasionally be unavailable.
-- MQTT QoS 1 provides at-least-once delivery, so a message can be duplicated in some failure scenarios.
-- The local queue is persistent across program restarts.
+- Sensor readings are generated by software and are not measured using a physical sensor.
+- The public MQTT broker is intended for testing and may occasionally be unavailable.
+- MQTT QoS 1 provides at-least-once delivery, meaning duplicate messages are possible in certain failure scenarios.
+- The local queue persists across program restarts.
 
-## 9. Future improvements
+## 9. Future Improvements
 
-- Connect a real ESP32 and DHT22 sensor.
-- Add a dashboard to visualise readings.
-- Add TLS and authentication for a private MQTT broker.
+- Connect a physical ESP32 and DHT22 temperature and humidity sensor.
+- Develop a dashboard to visualise incoming sensor readings.
+- Add TLS encryption and authentication using a private MQTT broker.
